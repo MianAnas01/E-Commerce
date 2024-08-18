@@ -1,11 +1,11 @@
 const ErrorHandler = require("../utils/errorhandler");
 const Product = require("../models/productModel");
-const catchAsyncError = require("../midlewaare/catchAsyncError");
+const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const ApiFeatures = require("../utils/apiFeatures");
 
 // create product
 
-exports.createProduct = catchAsyncError(async (req, res, next) => {
+exports.createProduct = catchAsyncErrors(async (req, res, next) => {
   const product = await Product.create(req.body);
 
   res.status(201).json({
@@ -15,8 +15,8 @@ exports.createProduct = catchAsyncError(async (req, res, next) => {
 });
 
 // get all products --only admin
-exports.getAllProducts = catchAsyncError(async (req, res) => {
-  const resultPerPage = 5;
+exports.getAllProducts = catchAsyncErrors(async (req, res) => {
+const resultPerPage = 5;
 const productCount = await Product.countDocuments();
 
   const apiFeature = new ApiFeatures(Product.find(), req.query)
@@ -31,8 +31,8 @@ const productCount = await Product.countDocuments();
 });
 
 // product detail
-exports.getProductDetails = catchAsyncError(async (req, res, next) => {
-  const product = await Product.findById(req.params.id);
+exports.getProductDetails = catchAsyncErrors(async (req, res, next) => {
+const product = await Product.findById(req.params.id);
 
   if (!product) {
     return next(new ErrorHandler("Product not found", 404));
@@ -47,7 +47,7 @@ exports.getProductDetails = catchAsyncError(async (req, res, next) => {
 
 // update product
 
-exports.updateProduct = catchAsyncError(async (req, res) => {
+exports.updateProduct = catchAsyncErrors(async (req, res) => {
   let product = await Product.findById(req.params.id);
   if (!product) {
     return next(new ErrorHandler("Product not found", 404));
@@ -66,7 +66,7 @@ exports.updateProduct = catchAsyncError(async (req, res) => {
 
 // delete product
 
-exports.deleteProduct = catchAsyncError(async (req, res) => {
+exports.deleteProduct = catchAsyncErrors(async (req, res) => {
   const product = await Product.findById(req.params.id);
 
   if (!product) {
