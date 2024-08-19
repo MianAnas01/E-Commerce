@@ -2,7 +2,7 @@ const ErrorHandler = require("../utils/errorhandler");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const User = require("../models/userModel");
 const sendToken = require("../utils/jwtToken");
-
+const sendEmail = require("../utils/sendEmail.js");
 
 // Register user
 exports.registerUser = catchAsyncErrors(async (req, res, next) => {
@@ -20,7 +20,7 @@ exports.registerUser = catchAsyncErrors(async (req, res, next) => {
 
   const token = user.getJWTToken();
 
-  sendToken(user,201,res);
+  sendToken(user, 201, res);
 });
 
 // Login User
@@ -41,5 +41,58 @@ exports.loginUser = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("Invalid email or password", 401));
   }
 
-sendToken(user,200,res);
+  sendToken(user, 200, res);
+});
+
+// Logout User
+
+exports.logout = catchAsyncErrors(async (req, res, next) => {
+  res.cookie("token", null, {
+    expires: new Date(Date.now()),
+    httpOnly: true,
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Logged Out",
+  });
+});
+
+// forget password
+exports.forgotPassword = catchAsyncErrors(async (req, res, next) => {
+  const user = await User.findOne({ email: req.body.email });
+
+  if (!user) {
+    return next(new ErrorHandler("User not found", 404));
+  }
+
+  // Get reset password token
+  const resetToken = user.getResetPasswordToken();
+
+  await user.save({ validateBeforeSave: false });
+
+  const resetPasswordUrl = `${req.protocol}://${req.get(
+    "host"
+  )}/api/v1/password/reset/${resetToken}`;
+
+  const message = `Your password reset token is :- \n\n ${resetPasswordUrl} \n\n if u have not requested this email,
+then please ignore it `;
+
+  try {
+    await sendEmail({
+      email: user.email,
+      subject: "Ecommerce password recovery",
+      message,
+    });
+    res.status(200).json({
+      success: true,
+      message: `email sent to ${user.email} successfuly`,
+    });
+  } catch (error) {
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+
+    await user.save({ validateBeforeSave: false });
+    return next(new ErrorHandler(error.message, 500));
+  }
 });
