@@ -146,19 +146,19 @@ exports.updatePassword = catchAsyncErrors(async (req, res, next) => {
 
   const isPasswordMatched = await user.comparePassword(req.body.oldPassword);
 
-  if(!isPasswordMatched){
+  if (!isPasswordMatched) {
     return next(new ErrorHandler("Old password is incorrect ", 400));
   }
 
   if (req.body.newPassword !== req.body.confirmPassword) {
     return next(new ErrorHandler("Password does not match ", 400));
   }
-user.password = req.body.newPassword;
+  user.password = req.body.newPassword;
 
-await user.save();
-sendToken(user, 200, res)
+  await user.save();
+  sendToken(user, 200, res);
 
-  res.status(user,200,res)
+  res.status(user, 200, res);
 });
 
 // update Profile
@@ -176,5 +176,70 @@ exports.updateProfile = catchAsyncErrors(async (req, res, next) => {
 
   res.status(200).json({
     success: true,
+  });
+});
+
+// Get all users --admin
+exports.getAllUsers = catchAsyncErrors(async (req, res, next) => {
+  const users = await User.find();
+
+  res.status(200).json({
+    success: true,
+    users,
+  });
+});
+
+// Get single user --admin
+exports.getSingleUser = catchAsyncErrors(async (req, res, next) => {
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    return next(new ErrorHandler(`user does not exist with ${req.params.id}`));
+  }
+
+  res.status(200).json({
+    success: true,
+    user,
+  });
+});
+
+// update user role --admin
+exports.updateUserRole = catchAsyncErrors(async (req, res, next) => {
+  const newUserData = {
+    name: req.body.name,
+    email: req.body.email,
+    role: req.body.role,
+  };
+
+  // if (!user) {
+  //   return next(
+  //     new ErrorHandler(`user does not exist with ${req.params.id}`, 400)
+  //   );
+  // }
+
+  await User.findByIdAndUpdate(req.params.id, newUserData, {
+    new: true,
+    runValidators: true,
+    useFindAndModify: false,
+  });
+
+  res.status(200).json({
+    success: true,
+  });
+});
+
+// delete user  --admin
+exports.deleteUser = catchAsyncErrors(async (req, res, next) => {
+  const user = await User.findByIdAndDelete(req.params.id);
+
+  if (!user) {
+    return next(
+      new ErrorHandler(`user does not exist with ${req.params.id}`, 400)
+    );
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "user deleted sccessfuly",
   });
 });
